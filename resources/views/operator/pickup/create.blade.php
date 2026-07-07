@@ -1,7 +1,8 @@
 <x-layout-app :title="'Proses Pengambilan'">
 
     <div class="mb-4">
-        <a href="{{ route('operator.pickup.index') }}" class="text-decoration-none text-muted small">&larr; Kembali ke Pengambilan Laundry</a>
+        <a href="{{ route('operator.pickup.index') }}" class="text-decoration-none text-muted small">&larr; Kembali ke
+            Pengambilan Laundry</a>
         <h3 class="fw-bold text-dark mt-2">Proses Pengambilan — {{ $order->order_code }}</h3>
     </div>
 
@@ -36,7 +37,9 @@
                         <tr>
                             <td class="px-4 py-3 fw-bold text-dark">{{ $detail->service->service_name }}</td>
                             <td class="px-4 py-3 text-dark">{{ $detail->qty }}</td>
-                            <td class="px-4 py-3 font-monospace fw-bold text-success">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 font-monospace fw-bold text-success">Rp
+                                {{ number_format($detail->subtotal, 0, ',', '.') }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -44,11 +47,33 @@
         </div>
     </div>
 
+    @php
+        $subtotal = $order->total;
+        $tax = round($subtotal * 0.1);
+        $totalDue = $subtotal + $tax;
+        $isPrepaid = $order->order_pay > 0;
+    @endphp
+
+    @if ($isPrepaid)
+        <div class="alert alert-success rounded-4 mb-4">
+            <div class="fw-semibold">Pembayaran telah dilakukan di muka.</div>
+            <div class="small text-muted">Total bayar sudah tercatat, hanya konfirmasi pengambilan yang diperlukan.</div>
+        </div>
+    @endif
+
     {{-- Kartu total bayar --}}
     <div class="card shadow-sm border-0 rounded-4 bg-primary bg-gradient text-white p-4 mb-4" style="max-width: 320px;">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <span class="fw-semibold text-white-50">Subtotal</span>
+            <span class="font-monospace fw-bold">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+        </div>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <span class="fw-semibold text-white-50">Pajak 10%</span>
+            <span class="font-monospace fw-bold">Rp {{ number_format($tax, 0, ',', '.') }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center border-top border-white border-opacity-25 pt-3">
             <span class="fw-semibold text-white-50">Total Bayar</span>
-            <span class="font-monospace fs-4 fw-bold">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
+            <span class="font-monospace fs-4 fw-bold">Rp {{ number_format($totalDue, 0, ',', '.') }}</span>
         </div>
     </div>
 
@@ -57,37 +82,111 @@
         <form method="POST" action="{{ route('operator.pickup.store', $order->id) }}" class="form-confirm-pickup">
             @csrf
 
+            <input type="hidden" name="order_pay" id="order_pay" value="{{ $isPrepaid ? $order->order_pay : 0 }}">
+            <input type="hidden" id="total_due" value="{{ $totalDue }}">
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-dark">Jumlah Bayar</label>
+                <input type="text" id="payment_amount" class="form-control rounded-3" inputmode="numeric"
+                    placeholder="Masukkan jumlah uang customer" autocomplete="off" {{ $isPrepaid ? 'readonly' : '' }}
+                    value="{{ $isPrepaid ? 'Rp ' . number_format($order->order_pay, 0, ',', '.') : '' }}">
+                @if ($isPrepaid)
+                    <div class="form-text text-success">Pembayaran sudah dibayar di muka. Hanya konfirmasi pengambilan yang
+                        diperlukan.</div>
+                @endif
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-dark">Kembali</label>
+                <div class="form-control rounded-3 bg-light text-dark" id="change_amount">Rp
+                    {{ $isPrepaid ? number_format($order->order_change, 0, ',', '.') : '0' }}</div>
+            </div>
+
             <div class="mb-4">
                 <label class="form-label fw-semibold text-dark">Catatan Pengambilan (opsional)</label>
-                <textarea name="notes" rows="3"
-                    class="form-control rounded-3"
+                <textarea name="notes" rows="3" class="form-control rounded-3"
                     placeholder="Contoh: diambil oleh keluarga customer"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-success px-4 py-2.5 rounded-3 fw-semibold d-inline-flex align-items-center gap-2">
-                ✓ Konfirmasi Pakaian Sudah Diambil
+            <button type="submit"
+                class="btn btn-success px-4 py-2.5 rounded-3 fw-semibold d-inline-flex align-items-center gap-2">
+                ✓ {{ $isPrepaid ? 'Konfirmasi Pengambilan' : 'Konfirmasi & Bayar' }}
             </button>
         </form>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const form = document.querySelector('.form-confirm-pickup');
+            const paymentInput = document.getElementById('payment_amount');
+            const orderPayInput = document.getElementById('order_pay');
+            const changeAmount = document.getElementById('change_amount');
+            const totalDue = Number(document.getElementById('total_due').value) || 0;
+            const isPrepaid = {{ $isPrepaid ? 'true' : 'false' }};
+
+            function formatRupiah(value) {
+                return value.toLocaleString('id-ID');
+            }
+
+            function parseNumber(value) {
+                return Number(value.replace(/[^0-9]/g, '')) || 0;
+            }
+
+            function updateChange() {
+                const paid = parseNumber(paymentInput.value);
+                orderPayInput.value = paid;
+                const change = paid - totalDue;
+                changeAmount.textContent = 'Rp ' + formatRupiah(Math.max(change, 0));
+            }
+
+            if (!isPrepaid && paymentInput) {
+                paymentInput.addEventListener('input', function () {
+                    const raw = parseNumber(this.value);
+                    this.value = raw > 0 ? 'Rp ' + formatRupiah(raw) : '';
+                    updateChange();
+                });
+            }
+
+            if (isPrepaid) {
+                orderPayInput.value = {{ $order->order_pay }};
+                changeAmount.textContent = 'Rp ' + formatRupiah({{ $order->order_change }});
+            }
+
             if (form) {
-                form.addEventListener('submit', function(e) {
+                form.addEventListener('submit', function (e) {
+                    const paid = Number(orderPayInput.value);
+                    if (paid < totalDue || paid === 0) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Pembayaran tidak valid',
+                            text: 'Jumlah bayar kurang atau tidak sesuai. Pastikan membayar total + pajak 10%.',
+                            icon: 'error',
+                            confirmButtonColor: '#3b82f6',
+                            background: '#ffffff',
+                            color: '#1e293b',
+                            customClass: { popup: 'shadow-sm border rounded-4' }
+                        });
+                        return;
+                    }
+
                     if (form.dataset.confirmed) {
                         return;
                     }
+
                     e.preventDefault();
                     Swal.fire({
-                        title: 'Konfirmasi Pengambilan',
-                        text: "Apakah pakaian benar-benar sudah diambil oleh customer?",
+                        title: 'Konfirmasi Pembayaran',
+                        html: '<div class="text-start">' +
+                            '<p class="mb-2">Total yang harus dibayar: <strong>Rp ' + formatRupiah(totalDue) + '</strong></p>' +
+                            '<p class="mb-0">Uang diterima: <strong>Rp ' + formatRupiah(paid) + '</strong></p>' +
+                            '</div>',
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonColor: '#198754',
                         cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Ya, Sudah Diambil!',
-                        cancelButtonText: 'Batal'
+                        confirmButtonText: 'Bayar & Konfirmasi',
+                        cancelButtonText: 'Batal',
+                        customClass: { popup: 'shadow-sm border rounded-4' }
                     }).then((result) => {
                         if (result.isConfirmed) {
                             form.dataset.confirmed = true;

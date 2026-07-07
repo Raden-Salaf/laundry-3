@@ -36,12 +36,12 @@
     {{-- Menu cepat ke master data --}}
     <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
         <h5 class="fw-bold text-dark mb-3">Master Data</h5>
-        
+
         <div class="row g-3">
             <div class="col-md-4">
                 <a href="{{ route('admin.customer.index') }}" class="card border h-100 text-decoration-none hover-bg-light transition rounded-3 p-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="fs-2 text-primary">👤</div>
+                        <div class="fs-2 text-primary"> 🦧</div>
                         <div>
                             <h6 class="m-0 fw-bold text-dark">Customer</h6>
                             <small class="text-muted">Kelola data pelanggan</small>

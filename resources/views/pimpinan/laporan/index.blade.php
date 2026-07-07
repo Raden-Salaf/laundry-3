@@ -10,19 +10,18 @@
         <form method="GET" action="{{ route('pimpinan.laporan.index') }}" class="row g-3 align-items-end">
             <div class="col-md-3 col-sm-6">
                 <label class="form-label text-muted small fw-semibold">Dari Tanggal</label>
-                <input type="date" name="start_date" value="{{ request('start_date') }}"
-                    class="form-control rounded-3">
+                <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control rounded-3">
             </div>
             <div class="col-md-3 col-sm-6">
                 <label class="form-label text-muted small fw-semibold">Sampai Tanggal</label>
-                <input type="date" name="end_date" value="{{ request('end_date') }}"
-                    class="form-control rounded-3">
+                <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-control rounded-3">
             </div>
             <div class="col-md-auto d-flex gap-2 align-items-center">
                 <button type="submit" class="btn btn-primary px-4 rounded-3 fw-semibold">
                     Filter
                 </button>
-                <a href="{{ route('pimpinan.laporan.index') }}" class="text-decoration-none text-muted small fw-semibold">Reset</a>
+                <a href="{{ route('pimpinan.laporan.index') }}"
+                    class="text-decoration-none text-muted small fw-semibold">Reset</a>
             </div>
         </form>
     </div>
@@ -61,33 +60,50 @@
                         <th class="px-4 py-3 fw-semibold">Tanggal</th>
                         <th class="px-4 py-3 fw-semibold">Total</th>
                         <th class="px-4 py-3 fw-semibold">Status</th>
+                        <th class="px-4 py-3 fw-semibold">Pembayaran</th>
                         <th class="px-4 py-3 fw-semibold text-end">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($orders as $order)
                         <tr>
-                            <td class="px-4 py-3 text-muted">{{ ($orders->currentPage() - 1) * $orders->perPage() + $loop->iteration }}</td>
+                            <td class="px-4 py-3 text-muted">
+                                {{ ($orders->currentPage() - 1) * $orders->perPage() + $loop->iteration }}</td>
                             <td class="px-4 py-3 font-monospace fw-bold text-dark">{{ $order->order_code }}</td>
-                            <td class="px-4 py-3 text-dark">{{ $order->customer->customer_name ?? 'Pelanggan Terhapus' }}</td>
-                            <td class="px-4 py-3 text-muted">{{ \Carbon\Carbon::parse($order->order_date)->translatedFormat('d M Y') }}</td>
-                            <td class="px-4 py-3 font-monospace fw-bold text-success">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-dark">{{ $order->customer->customer_name ?? 'Pelanggan Terhapus' }}
+                            </td>
+                            <td class="px-4 py-3 text-muted">
+                                {{ \Carbon\Carbon::parse($order->order_date)->translatedFormat('d M Y') }}</td>
+                            <td class="px-4 py-3 font-monospace fw-bold text-success">Rp
+                                {{ number_format($order->total, 0, ',', '.') }}</td>
                             <td class="px-4 py-3">
                                 @if ($order->order_status == 0)
-                                    <span class="badge bg-warning text-dark px-3 py-1.5 rounded-pill fw-semibold text-xs">Baru</span>
+                                    <span
+                                        class="badge bg-warning text-dark px-3 py-1.5 rounded-pill fw-semibold text-xs">Baru</span>
                                 @else
-                                    <span class="badge bg-success text-white px-3 py-1.5 rounded-pill fw-semibold text-xs">Sudah Diambil</span>
+                                    <span class="badge bg-success text-white px-3 py-1.5 rounded-pill fw-semibold text-xs">Sudah
+                                        Diambil</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if ($order->order_pay > 0)
+                                    <span
+                                        class="badge bg-success text-white px-3 py-1.5 rounded-pill fw-semibold text-xs">Lunas</span>
+                                @else
+                                    <span class="badge bg-warning text-dark px-3 py-1.5 rounded-pill fw-semibold text-xs">Belum
+                                        Dibayar</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-end">
-                                <a href="{{ route('pimpinan.laporan.show', $order->id) }}" class="btn btn-sm btn-outline-primary px-3 rounded-2">
+                                <a href="{{ route('pimpinan.laporan.show', $order->id) }}"
+                                    class="btn btn-sm btn-outline-primary px-3 rounded-2">
                                     Detail
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-5 text-center text-muted">
+                            <td colspan="8" class="px-4 py-5 text-center text-muted">
                                 Tidak ada data transaksi pada rentang tanggal ini.
                             </td>
                         </tr>

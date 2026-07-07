@@ -39,14 +39,17 @@ class TransOrderController extends Controller
             'qty'                => 'required|array|min:1', // array qty, sejajar dengan services
             'qty.*'              => 'required|numeric|min:0.1',
             'notes'              => 'nullable|array',
+            'pay_now'            => 'required|in:0,1',
+            'order_pay'          => 'nullable|numeric|min:0',
+            'order_change'       => 'nullable|numeric|min:0',
         ]);
 
         // Gunakan DB Transaction supaya proses insert header + detail bersifat atomic
         // (kalau salah satu gagal, semua di-rollback, tidak ada data setengah jadi)
         DB::transaction(function () use ($request) {
 
-            // Generate kode order unik, format: TRX-YYYYMMDD-XXXX
-            $orderCode = 'TRX-' . now()->format('Ymd') . '-' . str_pad(TransOrder::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT);
+            // Generate kode order unik, format: LAUNDRY-YYYYMMDD-XXXX
+            $orderCode = 'LAUNDRY-' . now()->format('Ymd') . '-' . str_pad(TransOrder::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT);
 
             // Buat header transaksi terlebih dahulu, total sementara 0 (akan diupdate setelah detail dihitung)
             $order = TransOrder::create([
@@ -79,8 +82,24 @@ class TransOrderController extends Controller
                 $grandTotal += $subtotal;
             }
 
+            $tax = round($grandTotal * 0.1);
+            $totalDue = $grandTotal + $tax;
+
+            $orderData = ['total' => $grandTotal];
+            if ($request->pay_now == '1') {
+                $payment = $request->order_pay ?? 0;
+                if ($payment < $totalDue) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'order_pay' => 'Jumlah pembayaran harus sama atau lebih besar dari total transaksi termasuk pajak.',
+                    ]);
+                }
+
+                $orderData['order_pay'] = $payment;
+                $orderData['order_change'] = max($payment - $totalDue, 0);
+            }
+
             // Update total keseluruhan di header transaksi setelah semua detail dihitung
-            $order->update(['total' => $grandTotal]);
+            $order->update($orderData);
         });
 
         return redirect()->route('operator.order.index')->with('success', 'Transaksi laundry berhasil dibuat.');

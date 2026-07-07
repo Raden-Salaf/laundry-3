@@ -1,7 +1,8 @@
 <x-layout-app :title="'Buat Transaksi Laundry'">
 
     <div class="mb-4">
-        <a href="{{ route('operator.order.index') }}" class="text-decoration-none text-muted small">&larr; Kembali ke Transaksi Laundry</a>
+        <a href="{{ route('operator.order.index') }}" class="text-decoration-none text-muted small">&larr; Kembali ke
+            Transaksi Laundry</a>
         <h3 class="fw-bold text-dark mt-2">Buat Transaksi Baru</h3>
     </div>
 
@@ -35,7 +36,8 @@
         <div class="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-white">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold text-dark m-0">Detail Jasa</h5>
-                <h5 class="m-0">Total: <span id="grand-total" class="font-monospace fw-bold text-success">Rp 0</span></h5>
+                <h5 class="m-0">Total: <span id="grand-total" class="font-monospace fw-bold text-success">Rp 0</span>
+                </h5>
             </div>
 
             <div id="service-rows" class="d-flex flex-column gap-3">
@@ -55,20 +57,21 @@
                     </div>
                     <div class="col-md-2 col-sm-6">
                         <label class="form-label text-muted small fw-semibold">Qty (kg)</label>
-                        <input type="number" name="qty[]" step="0.1" min="0.1" placeholder="Qty (kg)" required oninput="calculateRow(this)"
-                            class="qty-input form-control rounded-3">
+                        <input type="number" name="qty[]" step="0.1" min="0.1" placeholder="Qty (kg)" required
+                            oninput="calculateRow(this)" class="qty-input form-control rounded-3">
                     </div>
                     <div class="col-md-3 col-sm-6">
                         <label class="form-label text-muted small fw-semibold">Catatan (opsional)</label>
-                        <input type="text" name="notes[]" placeholder="Catatan"
-                            class="form-control rounded-3">
+                        <input type="text" name="notes[]" placeholder="Catatan" class="form-control rounded-3">
                     </div>
                     <div class="col-md-3 col-sm-12 d-flex justify-content-between align-items-center">
                         <div>
                             <label class="form-label text-muted small fw-semibold d-block">Subtotal</label>
                             <span class="row-subtotal fw-bold text-dark font-monospace">Rp 0</span>
                         </div>
-                        <button type="button" onclick="removeRow(this)" class="btn btn-outline-danger btn-sm border-0 rounded-circle" style="width: 32px; height: 32px; padding: 0;" title="Hapus baris">✕</button>
+                        <button type="button" onclick="removeRow(this)"
+                            class="btn btn-outline-danger btn-sm border-0 rounded-circle"
+                            style="width: 32px; height: 32px; padding: 0;" title="Hapus baris">✕</button>
                     </div>
                 </div>
             </div>
@@ -80,15 +83,127 @@
             </div>
         </div>
 
+        <div class="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-white">
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-dark">Pembayaran</label>
+                <select name="pay_now" id="pay_now" class="form-select rounded-3">
+                    <option value="0" selected>Bayar Nanti</option>
+                    <option value="1">Bayar Sekarang</option>
+                </select>
+            </div>
+
+            <div id="payment-now-section" class="d-none">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark">Jumlah Bayar</label>
+                    <input type="text" id="payment_amount" class="form-control rounded-3" inputmode="numeric"
+                        placeholder="Masukkan jumlah bayar" autocomplete="off">
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Subtotal</span>
+                        <span id="payment_subtotal" class="fw-semibold">Rp 0</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Pajak 10%</span>
+                        <span id="payment_tax" class="fw-semibold">Rp 0</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Total Bayar</span>
+                        <span id="payment_total" class="fw-semibold">Rp 0</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Kembalian</span>
+                        <span id="payment_change" class="fw-semibold">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" name="order_pay" id="order_pay" value="0">
+            <input type="hidden" name="order_change" id="order_change" value="0">
+        </div>
+
         <div class="d-flex align-items-center gap-3">
             <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
                 Simpan Transaksi
             </button>
-            <a href="{{ route('operator.order.index') }}" class="text-decoration-none text-muted fw-semibold small">Batal</a>
+            <a href="{{ route('operator.order.index') }}"
+                class="text-decoration-none text-muted fw-semibold small">Batal</a>
         </div>
     </form>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const payNowSelect = document.getElementById('pay_now');
+            const paymentSection = document.getElementById('payment-now-section');
+            const paymentInput = document.getElementById('payment_amount');
+            const orderPayInput = document.getElementById('order_pay');
+            const orderChangeInput = document.getElementById('order_change');
+            const paymentChange = document.getElementById('payment_change');
+            const paymentSubtotal = document.getElementById('payment_subtotal');
+            const paymentTax = document.getElementById('payment_tax');
+            const paymentTotal = document.getElementById('payment_total');
+
+            function formatRupiah(value) {
+                return value.toLocaleString('id-ID');
+            }
+
+            function parseNumber(value) {
+                return Number(value.replace(/[^0-9]/g, '')) || 0;
+            }
+
+            function getGrandTotal() {
+                let total = 0;
+                document.querySelectorAll('.service-row').forEach(row => {
+                    const select = row.querySelector('.service-select');
+                    const qtyInput = row.querySelector('.qty-input');
+                    const price = parseFloat(select.selectedOptions[0]?.dataset.price || 0);
+                    const qty = parseFloat(qtyInput.value || 0);
+                    total += price * qty;
+                });
+                return total;
+            }
+
+            function updatePaymentInfo() {
+                const payNow = payNowSelect.value === '1';
+                const paymentAmount = parseNumber(paymentInput.value);
+                const subtotal = getGrandTotal();
+                const tax = Math.round(subtotal * 0.1);
+                const totalDue = subtotal + tax;
+                const change = paymentAmount - totalDue;
+
+                paymentSubtotal.textContent = 'Rp ' + formatRupiah(subtotal);
+                paymentTax.textContent = 'Rp ' + formatRupiah(tax);
+                paymentTotal.textContent = 'Rp ' + formatRupiah(totalDue);
+                paymentChange.textContent = 'Rp ' + formatRupiah(Math.max(change, 0));
+                orderPayInput.value = payNow ? paymentAmount : 0;
+                orderChangeInput.value = payNow ? Math.max(change, 0) : 0;
+            }
+
+            function togglePaymentSection() {
+                const show = payNowSelect.value === '1';
+                paymentSection.classList.toggle('d-none', !show);
+                if (!show) {
+                    paymentInput.value = '';
+                    paymentChange.textContent = 'Rp 0';
+                    orderPayInput.value = 0;
+                    orderChangeInput.value = 0;
+                }
+                updatePaymentInfo();
+            }
+
+            payNowSelect.addEventListener('change', togglePaymentSection);
+
+            if (paymentInput) {
+                paymentInput.addEventListener('input', function () {
+                    const raw = parseNumber(this.value);
+                    this.value = raw > 0 ? 'Rp ' + formatRupiah(raw) : '';
+                    updatePaymentInfo();
+                });
+            }
+
+            togglePaymentSection();
+        });
+
         function calculateRow(el) {
             const row = el.closest('.service-row');
             const select = row.querySelector('.service-select');
@@ -114,6 +229,10 @@
                 total += price * qty;
             });
             document.getElementById('grand-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+            document.getElementById('payment_total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+            if (typeof updatePaymentInfo === 'function') {
+                updatePaymentInfo();
+            }
         }
 
         function addServiceRow() {

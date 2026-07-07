@@ -1,11 +1,14 @@
 <x-layout-app :title="'Data Jenis Service'">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h3 class="fw-bold text-dark m-0">Data Jenis Service</h3>
+        <div class="fw-bold">
+            <marquee behavior="" direction="">
+                <h3 class="fw-bold text-dark m-0">Data Jenis Service</h3>
+            </marquee>
             <p class="text-muted small m-0">Kelola jenis jasa laundry beserta harga per kg.</p>
         </div>
-        <a href="{{ route('admin.service.create') }}" class="btn btn-primary px-4 py-2 rounded-3 d-flex align-items-center gap-2">
+        <a href="{{ route('admin.service.create') }}"
+            class="btn btn-primary px-4 py-2 rounded-3 d-flex align-items-center gap-2">
             <span>+</span> Tambah Jenis Service
         </a>
     </div>
@@ -25,16 +28,22 @@
                 <tbody>
                     @forelse ($services as $service)
                         <tr>
-                            <td class="px-4 py-3 text-muted">{{ ($services->currentPage() - 1) * $services->perPage() + $loop->iteration }}</td>
+                            <td class="px-4 py-3 text-muted">
+                                {{ ($services->currentPage() - 1) * $services->perPage() + $loop->iteration }}
+                            </td>
                             <td class="px-4 py-3 fw-bold text-dark">{{ $service->service_name }}</td>
-                            <td class="px-4 py-3 font-monospace fw-bold text-success">Rp {{ number_format($service->price, 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 font-monospace fw-bold text-success">Rp
+                                {{ number_format($service->price, 0, ',', '.') }}
+                            </td>
                             <td class="px-4 py-3 text-muted">{{ $service->description ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('admin.service.edit', $service->id) }}" class="btn btn-sm btn-outline-primary px-3 rounded-2">
+                                    <a href="{{ route('admin.service.edit', $service->id) }}"
+                                        class="btn btn-sm btn-outline-primary px-3 rounded-2">
                                         Edit
                                     </a>
-                                    <form action="{{ route('admin.service.destroy', $service->id) }}" method="POST" class="form-delete">
+                                    <form action="{{ route('admin.service.destroy', $service->id) }}" method="POST"
+                                        class="form-delete">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger px-3 rounded-2">

@@ -38,7 +38,8 @@ class TransLaundryPickupController extends Controller
     public function store(Request $request, TransOrder $order)
     {
         $request->validate([
-            'notes' => 'nullable|string',
+            'notes'     => 'nullable|string',
+            'order_pay' => 'required|numeric|min:0',
         ]);
 
         // Cegah double-process kalau ada yang submit form dua kali
@@ -46,8 +47,18 @@ class TransLaundryPickupController extends Controller
             return redirect()->route('operator.pickup.index')->with('error', 'Transaksi ini sudah diambil sebelumnya.');
         }
 
+        $order->load('details');
+        $subtotal = $order->details->sum('subtotal');
+        $tax = round($subtotal * 0.1);
+        $totalDue = $subtotal + $tax;
+        $payment = $request->order_pay;
+
+        if ($payment < $totalDue) {
+            return redirect()->back()->withInput()->with('error', 'Pembayaran kurang atau tidak sesuai. Pastikan jumlah uang mencukupi total transaksi termasuk pajak 10%.');
+        }
+
         // Gunakan transaction supaya insert pickup & update status order konsisten (atomic)
-        DB::transaction(function () use ($request, $order) {
+        DB::transaction(function () use ($request, $order, $payment, $totalDue) {
 
             // Catat riwayat pengambilan
             TransLaundryPickup::create([
@@ -61,9 +72,12 @@ class TransLaundryPickupController extends Controller
             $order->update([
                 'order_status'   => 1,
                 'order_end_date' => now()->toDateString(),
+                'order_pay'      => $payment,
+                'order_change'   => $payment - $totalDue,
+                'total'          => $totalDue,
             ]);
         });
 
-        return redirect()->route('operator.pickup.index')->with('success', 'Pengambilan laundry berhasil dicatat.');
+        return redirect()->route('operator.pickup.index')->with('success', 'Pengambilan laundry berhasil dicatat dengan pembayaran.');
     }
 }
