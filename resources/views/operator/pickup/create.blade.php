@@ -57,7 +57,7 @@
     @if ($isPrepaid)
         <div class="alert alert-success rounded-4 mb-4">
             <div class="fw-semibold">Pembayaran telah dilakukan di muka.</div>
-            <div class="small text-muted">Total bayar sudah tercatat, hanya konfirmasi pengambilan yang diperlukan.</div>
+            <div class="small text-muted">Pelanggan sudah bayar kok.</div>
         </div>
     @endif
 
@@ -91,8 +91,7 @@
                     placeholder="Masukkan jumlah uang customer" autocomplete="off" {{ $isPrepaid ? 'readonly' : '' }}
                     value="{{ $isPrepaid ? 'Rp ' . number_format($order->order_pay, 0, ',', '.') : '' }}">
                 @if ($isPrepaid)
-                    <div class="form-text text-success">Pembayaran sudah dibayar di muka. Hanya konfirmasi pengambilan yang
-                        diperlukan.</div>
+                    <div class="form-text text-success">Pelanggan sudah membayar</div>
                 @endif
             </div>
 
